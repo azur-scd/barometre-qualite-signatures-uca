@@ -5,7 +5,7 @@
 # Ignore archived version of notebooks and python stuffs #
 ###################
 *.ipynb_checkpoints
-*.__pycache__
+*__pycache__
 
 # Ignore dev folders
 ###################

@@ -125,10 +125,10 @@ chapeau = html.Div(
                 "Nombre de mentions d'adresses")],
             className="mini_container",
         ),
-        html.Div(
-            [html.H6("47"), html.P(
-                "Date de dernière mise à jour")],
-            className="29 août 2022",
+         html.Div(
+            [html.H6("22 août 2022"),
+             html.P("Date de dernière mise à jour")],
+            className="mini_container",
         ),
     ],
     className="row flex-display",
@@ -149,4 +149,4 @@ app.layout = html.Div(
 
 # Main
 if __name__ == "__main__":
-    app.run_server(debug=True, port=port, host=host)
+    app.run_server(port=port, host=host)

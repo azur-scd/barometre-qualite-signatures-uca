@@ -63,7 +63,7 @@ section_synthese_pub = html.Div([
             'indice': 'Indice base 100 en 2016'
         },
         inline=True,
-        value='qte',
+        value="qte",
         id="radio-regroup-datatype"
     ), className="row flex-display"),
     html.Div(
