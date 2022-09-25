@@ -14,5 +14,5 @@
 
 # Ignore sqlite db
 ###################
-db/
+db/**
 !db/.gitkeep
