@@ -1,43 +1,44 @@
 #!/usr/local/bin python
 # -*- coding: utf-8 -*-
 import pathlib
-import dash
 import pandas as pd
-import json
+import dash
 from dash import Dash, callback, html, dcc, dash_table, Input, Output, State, MATCH, ALL
+import dash_bootstrap_components as dbc
+from templates.templates import get_slider_range
+import helpers.functions as fn
+import plotly.express as px
+import sqlalchemy as sqla
+import json
 import dash_dvx as dvx
 import config
 
 dash.register_page(__name__, path='/data')
 
-# config variables
-observation_date = config.OBSERVATION_DATE
+# config params
+publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
 
-# get relative data folder
+# get relative db folder
 PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("../data", observation_date).resolve()
+DB_PATH = PATH.joinpath("../db", "publications.db").resolve()
 
-# helpers functions
+dbEngine = sqla.create_engine(f'sqlite:///{DB_PATH}')
 
-# Load data
-df_detail = pd.read_csv(DATA_PATH.joinpath(
-    "detail_controle_mentionAdresses.csv"), sep=',', encoding="utf-8", dtype={"@afids": str})
-df_regroup = pd.read_csv(DATA_PATH.joinpath(
-    "regroupbypublis_controle_mentionAdresses.csv"), sep=',', encoding="utf-8", dtype={"annee_pub": str})
+#regroup data
+df_bsi_publis_uniques = pd.read_sql(
+    f'select * from bsi_publis_uniques_{publis_last_obs_date}', dbEngine)
+#detail data
+df_bsi_all_by_mention = pd.read_sql(
+    f'select * from bsi_all_by_mention_adresse_{publis_last_obs_date}', dbEngine)
 
-# Page layout
-
-layout = html.Div([
-    html.Div(html.H4('Dataset des publications'),
-             className="row flex-display"),
-    html.Div(dvx.Grid(
+grid_bsi_publis_uniques = dvx.Grid(
         id="grid_regroup",
-        dataSource=df_regroup.to_dict(orient="records"),
+        dataSource=df_bsi_publis_uniques.to_dict(orient="records"),
         columns=[{
-            "dataField": "dc:identifiers",
+            "dataField": "dc_identifiers",
             "caption": "Id Scopus", },
             {
-            "dataField": "prism:doi",
+            "dataField": "prism_doi",
             "caption": "DOI" 
             },
             {
@@ -53,7 +54,7 @@ layout = html.Div([
             "caption": "Auteur de correspondance UCA" 
             },
             {
-            "dataField": "Is_dc:creator",
+            "dataField": "Is_dc_creator",
             "caption": "Auteur créateur UCA" 
             },
              {
@@ -62,7 +63,7 @@ layout = html.Div([
             "visible": False
             },
               {
-            "dataField": "regroup_@afids",
+            "dataField": "regroup__afids",
             "caption": "(all) Id Scopus de structures",
             "visible": False
             },
@@ -71,32 +72,28 @@ layout = html.Div([
             "caption": "(all) Affiliations" 
             },
              {
-            "dataField": "regroup_ce:indexed-name",
+            "dataField": "regroup_ce_indexed-name",
             "caption": "(all) Auteurs" 
             },
              {
             "dataField": "synthese_mention_adresse_norm",
             "caption": "(synthese) Mention aff normalisée" 
             }],
-        keyExpr="dc:identifiers",
+        keyExpr="dc_identifiers",
         selectionMode="none",
         columnChooserIsEnabled=True,
         pageSizeSelectorIsEnabled=True,
         allowedPageSizes=[5, 10, 20, 50]
-    ),
-        className="row flex-display"),
-        html.Hr(),
-    html.Div(html.H4('Dataset des mentions d\'affiliation'),
-             className="row flex-display"),
-    html.Div(
-        dvx.Grid(
+    )
+
+grid_bsi_all_by_mention = dvx.Grid(
             id="grid_detail",
-            dataSource=df_detail.to_dict(orient="records"),
+            dataSource=df_bsi_all_by_mention.to_dict(orient="records"),
             columns=[{
-            "dataField": "dc:identifiers",
+            "dataField": "dc_identifiers",
             "caption": "Id Scopus", },
             {
-            "dataField": "prism:doi",
+            "dataField": "prism_doi",
             "caption": "DOI" 
             },
             {
@@ -108,7 +105,7 @@ layout = html.Div([
             "caption": "Année de publication" 
             },
             {
-            "dataField": "@afids",
+            "dataField": "_afids",
             "caption": "Id Scopus de structure",
             "visible": False
             },
@@ -117,16 +114,16 @@ layout = html.Div([
             "caption": "(source) Mention affiliation" 
             },
              {
-            "dataField": "@auid",
+            "dataField": "_auid",
             "caption": "Is Scopus auteur" ,
             "visible": False
             },
               {
-            "dataField": "ce:indexed-name",
+            "dataField": "ce_indexed-name",
             "caption": "Auteur",
             },
              {
-            "dataField": "@orcid",
+            "dataField": "_orcid",
             "caption": "Orcid",
             "visible": False
             },
@@ -135,7 +132,7 @@ layout = html.Div([
             "caption": "Auteur de correspondance UCA" 
             },
              {
-            "dataField": "Is_dc:creator",
+            "dataField": "Is_dc_creator",
             "caption": "Auteur créateur UCA" ,
             },
               {
@@ -171,11 +168,18 @@ layout = html.Div([
             "dataField": "affiliation_name",
             "caption": "Affiliation",
             }],
-            keyExpr="dc:identifiers",
+            keyExpr="dc_identifiers",
             selectionMode="none",
             columnChooserIsEnabled=True,
             pageSizeSelectorIsEnabled=True,
             allowedPageSizes=[5, 10, 20, 50]
-        ),
-        className="row flex-display")
-])
+        )
+
+layout = html.Div(
+    dbc.Row([
+        html.H3("Dataset des publications", className="text-center"),
+        grid_bsi_publis_uniques,
+        html.H3("Dataset des mentions d'affiliation", className="text-center"),
+        grid_bsi_all_by_mention,
+    ])
+)

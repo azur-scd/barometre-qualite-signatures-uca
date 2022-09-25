@@ -1,152 +1,124 @@
-#!/usr/local/bin python
-# -*- coding: utf-8 -*-
 import pathlib
-import dash
 import pandas as pd
-import plotly.express as px
-import json
+import dash
 from dash import Dash, callback, html, dcc, dash_table, Input, Output, State, MATCH, ALL
+import dash_bootstrap_components as dbc
+from templates.templates import widget_card_header
+import sqlalchemy as sqla
 import config
-
 
 # config variables
 port = config.PORT
 host = config.HOST
-url_subpath = config.URL_SUBPATH
-observation_date = config.OBSERVATION_DATE
+publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
 
-external_stylesheets=["https://cdn3.devexpress.com/jslib/21.2.5/css/dx.common.css","https://cdn3.devexpress.com/jslib/21.2.5/css/dx.material.blue.light.compact.css"]
+# external JavaScript f& CSS iles
+external_scripts = [
+    {
+        'src': 'https://code.jquery.com/jquery-3.6.0.min.js',
+        'integrity': 'sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=',
+        'crossorigin': 'anonymous'
+    },
+    'https://cdnjs.cloudflare.com/ajax/libs/devextreme/22.1.3/js/dx.all.js',
+]
 
-# get relative data folder
-PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("data", observation_date).resolve()
-
-# Load data
-df_detail_nb_rows = pd.read_csv(DATA_PATH.joinpath(
-    "detail_controle_mentionAdresses.csv")).shape[0]
-df_regroup_nb_rows = pd.read_csv(DATA_PATH.joinpath(
-    "regroupbypublis_controle_mentionAdresses.csv")).shape[0]
+# external CSS stylesheets
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    'https://cdnjs.cloudflare.com/ajax/libs/devextreme/22.1.3/css/dx.material.blue.light.compact.css',
+]
 
 app = dash.Dash(
-    __name__, suppress_callback_exceptions=True, use_pages=True,
+    __name__, use_pages=True, suppress_callback_exceptions=True,
     meta_tags=[
         {"name": "viewport", "content": "width=device-width"}],
+    external_scripts=external_scripts,
     external_stylesheets=external_stylesheets,
-    url_base_pathname=url_subpath
 )
-app.title = "Contrôle qualité signatures UCA"
+app.config.suppress_callback_exceptions = True
+
+app.title = "BSO UCA"
 server = app.server
 
-layout = dict(
-    autosize=True,
-    automargin=True,
-    margin=dict(l=30, r=30, b=20, t=40),
-    hovermode="closest",
-    plot_bgcolor="#F9F9F9",
-    paper_bgcolor="#F9F9F9",
-    legend=dict(font=dict(size=10), orientation="h"),
-    title="Satellite Overview",
-)
+# get relative db folder
+PATH = pathlib.Path(__file__).parent
+DB_PATH = PATH.joinpath("db", "publications.db").resolve()
 
-header = html.Div(
-    [
-        html.Div(
-            [
-                html.Img(
-                    src=app.get_asset_url(
-                        "logo_UCA_bibliotheque_ligne_couleurs.png"),
-                    id="plotly-image",
-                    style={
-                        "height": "60px",
-                        "width": "auto",
-                        "margin-bottom": "25px",
-                    },
-                )
-            ],
-            className="one-third column",
-        ),
-        html.Div(
-            [
-                html.Div(
+dbEngine=sqla.create_engine(f'sqlite:///{DB_PATH}')
+
+df_bsi_publis_uniques = pd.read_sql(f'select dc_identifiers from bsi_publis_uniques_{publis_last_obs_date}',dbEngine)
+df_bsi_all_by_mention_adresse = pd.read_sql(f'select dc_identifiers from bsi_all_by_mention_adresse_{publis_last_obs_date}',dbEngine)
+
+navbar = dbc.Navbar(
+    dbc.Container(
+        [
+            html.A(
+                # Use row and col to control vertical alignment of logo / brand
+                dbc.Row(
                     [
-                        html.H3(
-                            "Baromètre des signatures des publications scientifiques UCA",
-                            style={"margin-bottom": "0px"},
-                        ),
-                        html.Div(
-                            [ dcc.Link(html.A('Synthèse'), href=url_subpath, style={'color': 'blue', 'text-decoration': 'none'}),
-                              html.Span(' | ', style={'color': 'blue'}),
-                              dcc.Link(html.A('Données'), href=f'{url_subpath}data', style={'color': 'blue', 'text-decoration': 'none'}),
-                            ], style={"margin-top": "0px"}
-                        ),
-                    ]
-                )
-            ],
-            className="one-half column",
-            id="title",
-        ),
+                        dbc.Col(html.Img(src=app.get_asset_url('logo_UCA_bibliotheque_ligne_couleurs.png'), height="40px")),
+                        dbc.Col(dbc.NavbarBrand("Barometre qualité signatures", className="ms-2")),
+                    ],
+                    align="center",
+                    className="g-0",
+                ),
+                href="/",
+                style={"textDecoration": "none"},
+            ),
+            dbc.NavbarToggler(id="navbar-toggler2", n_clicks=0),
+            dbc.Collapse(
+                dbc.Nav(
+                    [dbc.NavItem(dbc.NavLink("Home", href="/")), 
+                    dbc.DropdownMenu(
+    children=[
+        dbc.DropdownMenuItem("Dashboard", href="/dashboard"),
+        dbc.DropdownMenuItem("Dashboard par structure", href="/dashboard-par-structure"),
+        dbc.DropdownMenuItem(divider=True),
+        dbc.DropdownMenuItem("Données", href="/data"),
     ],
-    id="header",
-    className="row flex-display",
-    style={"margin-bottom": "25px"},
+    nav=True,
+    in_navbar=True,
+    label="Menu",
+)],
+                    className="ms-auto",
+                    navbar=True,
+                ),
+                id="navbar-collapse2",
+                navbar=True,
+            ),
+        ],
+    style={"max-width":"1800px"}
+    ),
+    color="#7191b3",
+    dark=True,
+    className="mb-5",
 )
-footer = html.Div(
+
+row_widgets_header = html.Div(
     [
-        html.Footer(
+        dbc.Row(
             [
-                html.Div(
-                    [
-                        html.Span("2022 - SCD Université Côte d'Azur. | Contact : "),
-                        dcc.Link(html.A('geraldine.geoffroy@univ-cotedazur.fr'), href="mailto:geraldine.geoffroy@univ-cotedazur.fr")
-                    ])
-            ]
-        )
-    ],
-    id="footer",
-    className="row flex-display",
-    style={"margin-bottom": "25px"}
+                dbc.Col(widget_card_header("2016-2022", "Période observée"),width={"offset": 1, "size":2}),
+                dbc.Col(widget_card_header(f'{df_bsi_publis_uniques.shape[0]:,}'.replace(',', ' '),"Nombre de publications"),width=2),
+                dbc.Col(widget_card_header(f'{df_bsi_all_by_mention_adresse.shape[0]:,}'.replace(',', ' '),"Nombre de mentions d'adresse"), width=2),
+                dbc.Col(widget_card_header("29 août 2022","Date de dernière mise à jour"), width=2),
+            ],
+            align="center"
+        ),
+    ]
 )
 
-
-chapeau = html.Div(
+app.layout = dbc.Container(
+    fluid=True,
+    children=
     [
-        html.Div(
-            [html.H6("2016-2022"),
-             html.P("Période analysée")],
-            className="mini_container",
-        ),
-        html.Div(
-            [html.H6(f'{df_regroup_nb_rows}'), html.P(
-                "Nombre de publications")],
-            className="mini_container",
-        ),
-        html.Div(
-            [html.H6(f'{df_detail_nb_rows}'), html.P(
-                "Nombre de mentions d'adresses")],
-            className="mini_container",
-        ),
-         html.Div(
-            [html.H6("22 août 2022"),
-             html.P("Date de dernière mise à jour")],
-            className="mini_container",
-        ),
+        navbar,
+        row_widgets_header,
+        html.Hr(),
+        dash.page_container
     ],
-    className="row flex-display",
-    style={"justify-content": "center"}
-)
-
-# Main layout
-app.layout = html.Div(
-    [
-        header,
-        chapeau,
-        dash.page_container,
-        footer
-    ],
-    id="mainContainer",
-    style={"display": "flex", "flex-direction": "column"},
     )
 
 # Main
 if __name__ == "__main__":
-    app.run_server(port=port, host=host)
+    app.run_server(debug=True,port=port, host=host)

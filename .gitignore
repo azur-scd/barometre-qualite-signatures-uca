@@ -11,3 +11,8 @@
 ###################
 .devcontainer
 .vscode
+
+# Ignore sqlite db
+###################
+db/
+!db/.gitkeep
