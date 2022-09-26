@@ -17,9 +17,8 @@ dash.register_page(__name__, path='/dashboard-par-structure')
 # config params
 publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
 colors = config.COLORS
-
-chart_cols = ['ni_uca_ni_uns', 'uca_developpee',
-              'uca_sigle_seul', 'uns_seul']
+chart_cols = config.COLS
+chart_cols_charte = config.COLS_CHARTE
 
 
 # get relative db folder
@@ -53,13 +52,16 @@ listgrid_structures = html.Div(dvx.List(
 
 layout = html.Div([dcc.Store(id="selected_structures_afids"),
                    dcc.Store(id="selected_structures_data"),
-
+                   dbc.Row(dcc.Markdown('''
+    *Les catégories UCA affiliation) et UNS divers sont des structures factices créées afin de regrouper les mentions d'affiliation qui ne contiennent pas d'élément permettant d'associer une publication 
+    à une structure de recherche précise mais dont les informations ont tout de même permis d'affilier la publication à UCA (ex : signature du type "Observatoire de la Côte d'Azur")*''')
+                           ),
                    dbc.Row([dbc.Col(listgrid_structures, width=4),
                             dbc.Col([dbc.Alert(id="selected_structures_names_output", color="primary"),
                                      dbc.Alert(
                                          id="selected_structures_total_output", color="success"),
                                      get_slider_range("slider-pie"),
-                                     dcc.Graph(id="pie-structure"),
+                                     fn.load_with_spinner(dcc.Graph(id="pie-structure")),
                                      dbc.RadioItems(
                                 options=[
                                     {"label": "Valeur absolue", "value": "qte"},
@@ -69,7 +71,7 @@ layout = html.Div([dcc.Store(id="selected_structures_afids"),
                                 value="qte",
                                 id="radio-bar-datatype"
                             ),
-                                dcc.Graph(id="bar-structure") ],
+                                fn.load_with_spinner(dcc.Graph(id="bar-structure"))],
                        width=8),
                    ],
     className="p-3 bg-light rounded-3")
@@ -112,8 +114,6 @@ def update_dataframe(selected_structures_afids):
             where_request = f"_afids in {tuple_selected_structures_afids}"
         df = pd.read_sql(
             f"select dc_identifiers, annee_pub, mention_adresse_norm from bsi_all_by_mention_adresse_{publis_last_obs_date} where {where_request}", dbEngine)
-    else:
-        df = None
     return df.to_json(orient="records")
 
 
@@ -125,16 +125,19 @@ def update_dataframe(selected_structures_afids):
 )
 def update_pie_chart(selected_structures_data, slider_pie):
     if selected_structures_data is None:
-        fig = None
-        display_total = None
+        #fig = None
+        #display_total = None
         raise PreventUpdate
     if selected_structures_data is not None:
         df = pd.read_json(selected_structures_data)
         filtered_data = df[(df["annee_pub"].astype(int) >= int(slider_pie[0])) & (
             df["annee_pub"].astype(int) <= int(slider_pie[1]))]
         fig = px.pie(filtered_data, names='mention_adresse_norm', color='mention_adresse_norm',
-                     color_discrete_map=colors, hole=0.7, title="Ventilation des types de mention d'adresse")
+                     color_discrete_map=colors, hole=0.7, title="Ventilation des mentions d'affiliation")
         display_total = f"La sélection comprend {df.shape[0]} mentions d'affiliations correspondant à {df.drop_duplicates(subset=['dc_identifiers']).shape[0]} publications"
+        fig.for_each_trace(lambda t: t.update(
+             labels=[label.replace("_", " ").upper() for label in t.labels])
+        )
     return display_total, fig
 
 
@@ -144,18 +147,20 @@ def update_pie_chart(selected_structures_data, slider_pie):
      Input("radio-bar-datatype", "value")]
 )
 def update_bar_chart(selected_structures_data, radio_bar_datatype):
-    chart_title = ""
+    chart_title = "Evolution du type de mention d'affiliation par année de publication"
     if selected_structures_data is None:
-        fig = None
+        #fig = None
         raise PreventUpdate
     if selected_structures_data is not None:
-        df = pd.read_json(selected_structures_data)
+        df = pd.read_json(selected_structures_data).reset_index()
         df["annee_pub"] = df["annee_pub"].astype(str)
         crosstab_df = fn.get_crosstab_simple(
             df, "annee_pub", "mention_adresse_norm")
+        print(crosstab_df)
         crosstab_percent_df = fn.get_crosstab_percent(
             df, "annee_pub", "mention_adresse_norm")
         if radio_bar_datatype == "qte":
+
             fig = px.bar(crosstab_df.iloc[:-1, :].iloc[:, :-1], x='annee_pub',
                          y=chart_cols, color_discrete_map=colors, title=chart_title)
             fig.update_yaxes(title_text='Nombre de mentions d\'adresse')

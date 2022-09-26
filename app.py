@@ -11,6 +11,7 @@ import config
 port = config.PORT
 host = config.HOST
 publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
+url_subpath = config.URL_SUBPATH
 
 # external JavaScript f& CSS iles
 external_scripts = [
@@ -24,7 +25,7 @@ external_scripts = [
 
 # external CSS stylesheets
 external_stylesheets = [
-    dbc.themes.BOOTSTRAP,
+    dbc.themes.LUX,
     'https://cdnjs.cloudflare.com/ajax/libs/devextreme/22.1.3/css/dx.material.blue.light.compact.css',
 ]
 
@@ -34,10 +35,11 @@ app = dash.Dash(
         {"name": "viewport", "content": "width=device-width"}],
     external_scripts=external_scripts,
     external_stylesheets=external_stylesheets,
+    url_base_pathname=url_subpath,
 )
 app.config.suppress_callback_exceptions = True
 
-app.title = "BSO UCA"
+app.title = "Baromètre signatures UCA"
 server = app.server
 
 # get relative db folder
@@ -57,29 +59,21 @@ navbar = dbc.Navbar(
                 dbc.Row(
                     [
                         dbc.Col(html.Img(src=app.get_asset_url('logo_UCA_bibliotheque_ligne_couleurs.png'), height="40px")),
-                        dbc.Col(dbc.NavbarBrand("Barometre qualité signatures", className="ms-2")),
+                        dbc.Col(dbc.NavbarBrand("Barometre des signatures des publications scientifiques UCA", className="ms-2")),
                     ],
                     align="center",
                     className="g-0",
                 ),
-                href="/",
+                href=url_subpath,
                 style={"textDecoration": "none"},
-            ),
-            dbc.NavbarToggler(id="navbar-toggler2", n_clicks=0),
+            ), 
             dbc.Collapse(
                 dbc.Nav(
-                    [dbc.NavItem(dbc.NavLink("Home", href="/")), 
-                    dbc.DropdownMenu(
-    children=[
-        dbc.DropdownMenuItem("Dashboard", href="/dashboard"),
-        dbc.DropdownMenuItem("Dashboard par structure", href="/dashboard-par-structure"),
-        dbc.DropdownMenuItem(divider=True),
-        dbc.DropdownMenuItem("Données", href="/data"),
-    ],
-    nav=True,
-    in_navbar=True,
-    label="Menu",
-)],
+                    [#dbc.NavItem(dbc.NavLink("Home", href="/")), 
+                     dbc.NavItem(dbc.NavLink("Tableau de bord UCA", href=f"{url_subpath}dashboard")), 
+                     dbc.NavItem(dbc.NavLink("Tableau de bord par structure", href=f"{url_subpath}dashboard-par-structure")), 
+                     dbc.NavItem(dbc.NavLink("Données", href=f"{url_subpath}/data")), 
+],
                     className="ms-auto",
                     navbar=True,
                 ),
@@ -98,7 +92,8 @@ row_widgets_header = html.Div(
     [
         dbc.Row(
             [
-                dbc.Col(widget_card_header("2016-2022", "Période observée"),width={"offset": 1, "size":2}),
+                dbc.Col(widget_card_header("Scopus", "Source des données"),width={"offset": 1, "size":2}),
+                dbc.Col(widget_card_header("2016 - 2022", "Période observée"),width=2),
                 dbc.Col(widget_card_header(f'{df_bsi_publis_uniques.shape[0]:,}'.replace(',', ' '),"Nombre de publications"),width=2),
                 dbc.Col(widget_card_header(f'{df_bsi_all_by_mention_adresse.shape[0]:,}'.replace(',', ' '),"Nombre de mentions d'adresse"), width=2),
                 dbc.Col(widget_card_header("29 août 2022","Date de dernière mise à jour"), width=2),
@@ -108,6 +103,23 @@ row_widgets_header = html.Div(
     ]
 )
 
+footer = html.Div(
+    [
+        html.Footer(
+            [
+                html.Div(
+                    [
+                        html.Span("2022 - SCD Université Côte d'Azur. | Contact : "),
+                        dcc.Link(html.A('geraldine.geoffroy@univ-cotedazur.fr'), href="mailto:geraldine.geoffroy@univ-cotedazur.fr")
+                    ])
+            ]
+        )
+    ],
+    id="footer",
+    className="text-center",
+    style={"margin-bottom": "25px"}
+)
+
 app.layout = dbc.Container(
     fluid=True,
     children=
@@ -115,10 +127,11 @@ app.layout = dbc.Container(
         navbar,
         row_widgets_header,
         html.Hr(),
-        dash.page_container
+        dash.page_container,
+        footer
     ],
     )
 
 # Main
 if __name__ == "__main__":
-    app.run_server(debug=True,port=port, host=host)
+    app.run_server(port=port, host=host)

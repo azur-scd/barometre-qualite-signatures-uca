@@ -77,7 +77,7 @@ grid_bsi_publis_uniques = dvx.Grid(
             },
              {
             "dataField": "synthese_mention_adresse_norm",
-            "caption": "(synthese) Mention aff normalisée" 
+            "caption": "(synthese) Mention aff normalisée",
             }],
         keyExpr="dc_identifiers",
         selectionMode="none",
@@ -137,27 +137,22 @@ grid_bsi_all_by_mention = dvx.Grid(
             },
               {
             "dataField": "mentionAffil_reconstruct_subsentence_cleaned",
-            "caption": "Mention aff nettoyéé",
+            "caption": "Mention aff nettoyée",
             "visible": False
             },
               {
-            "dataField": "fuzzy_extractone_uca_developpee",
+            "dataField": "fuzzy_uca_developpee",
             "caption": "Score forme UCA développée",
             "visible": False
             },
              {
-            "dataField": "fuzzy_extractone_uca_sigle",
+            "dataField": "fuzzy_uca_sigle",
             "caption": "Score forme UCA sigle",
             "visible": False
             },
               {
-            "dataField": "fuzzy_extractone_uns_developpee",
-            "caption": "Score forme UNS développée",
-            "visible": False
-            },
-             {
-            "dataField": "fuzzy_extractone_uns_sigle",
-            "caption": "Score forme UNS sigle",
+            "dataField": "fuzzy_uns",
+            "caption": "Score forme UNS",
             "visible": False
             },
               {

@@ -1,4 +1,5 @@
 import pandas as pd
+import dash_loading_spinners as dls
 
 def get_crosstab_simple(df, col1, col2):
     c = pd.crosstab(df[col1], df[col2], normalize=False,
@@ -19,3 +20,9 @@ def get_crosstab_indice(df, cols_to_keep):
         indice_data[f'indice_{c}'] = (indice_data[c].div(
             indice_data[c].iloc[0])*100).round(2)
     return indice_data
+
+def load_with_spinner(composant):
+    return dls.Hash(composant,
+                        color="#435278",
+                        speed_multiplier=2,
+                        size=80,)
