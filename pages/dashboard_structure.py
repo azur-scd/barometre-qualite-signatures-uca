@@ -19,6 +19,7 @@ publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
 colors = config.COLORS
 chart_cols = config.COLS
 chart_cols_charte = config.COLS_CHARTE
+mapping_variable = config.MAPPING_VARIABLE
 
 
 # get relative db folder
@@ -61,7 +62,8 @@ layout = html.Div([dcc.Store(id="selected_structures_afids"),
                                      dbc.Alert(
                                          id="selected_structures_total_output", color="success"),
                                      get_slider_range("slider-pie"),
-                                     fn.load_with_spinner(dcc.Graph(id="pie-structure")),
+                                     fn.load_with_spinner(
+                                         dcc.Graph(id="pie-structure")),
                                      dbc.RadioItems(
                                 options=[
                                     {"label": "Valeur absolue", "value": "qte"},
@@ -136,7 +138,7 @@ def update_pie_chart(selected_structures_data, slider_pie):
                      color_discrete_map=colors, hole=0.7, title="Ventilation des mentions d'affiliation")
         display_total = f"La sélection comprend {df.shape[0]} mentions d'affiliations correspondant à {df.drop_duplicates(subset=['dc_identifiers']).shape[0]} publications"
         fig.for_each_trace(lambda t: t.update(
-             labels=[label.replace("_", " ").upper() for label in t.labels])
+            labels=[mapping_variable[label] for label in t.labels])
         )
     return display_total, fig
 
@@ -176,10 +178,9 @@ def update_bar_chart(selected_structures_data, radio_bar_datatype):
         orientation="h",
         y=-0.3,
     ))
-    fig.for_each_trace(lambda t: t.update(name=t.name.replace("_", " ").upper(),
-                                          legendgroup=t.name.replace(
-                                              "_", " ").upper(),
+    fig.for_each_trace(lambda t: t.update(name=mapping_variable[t.name],
+                                          legendgroup=mapping_variable[t.name],
                                           hovertemplate=t.hovertemplate.replace(
-                                              t.name, t.name.replace("_", " ").upper())
+                                              t.name, mapping_variable[t.name])
                                           ))
     return fig

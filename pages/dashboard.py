@@ -18,6 +18,7 @@ publis_last_obs_date = config.PUBLIS_LAST_OBS_DATE
 colors = config.COLORS
 chart_cols = config.COLS
 chart_cols_charte = config.COLS_CHARTE
+mapping_variable = config.MAPPING_VARIABLE
 
 # get relative db folder
 PATH = pathlib.Path(__file__).parent
@@ -115,6 +116,12 @@ row_widgets_regroup = html.Div(
 )
 
 row_widgets_detail = html.Div([
+    dbc.Row(dcc.Markdown('''
+    *Les catégories UCA affiliation) et UNS divers sont des structures factices créées afin de regrouper les mentions d'affiliation qui ne contiennent pas d'élément permettant d'associer une publication 
+    à une structure de recherche précise mais dont les informations ont tout de même permis d'affilier la publication à UCA (ex : signature du type "Observatoire de la Côte d'Azur")*
+    '''),
+            #className="mt-5"
+            ),
     dbc.Row([
         dbc.Col(get_slider_range("slider-barchart-detail"), width=6),
         dbc.Col(dbc.RadioItems(
@@ -129,23 +136,32 @@ row_widgets_detail = html.Div([
             id="radio-detail-datatype"
         ), width=6)
     ]),
-    dbc.Row(dcc.Markdown('''
-    *Les catégories UCA affiliation) et UNS divers sont des structures factices créées afin de regrouper les mentions d'affiliation qui ne contiennent pas d'élément permettant d'associer une publication 
-    à une structure de recherche précise mais dont les informations ont tout de même permis d'affilier la publication à UCA (ex : signature du type "Observatoire de la Côte d'Azur")*
-    '''),
-    className="mt-5"
-            ),
     dbc.Row(
-        dbc.Col(fn.load_with_spinner(dcc.Graph(id="barchart-detail")), width=12))
+        [dbc.Col([html.P("Nombre de structures à afficher"),
+                 dcc.RangeSlider(id="slider-nb-structures",
+                                 min=1,
+                                 max=50,
+                                 step=5,
+                                 value=[1, 50],
+                                 className="dcc_control",
+                                 updatemode="drag",
+                                 tooltip={"placement": "bottom",
+                                          "always_visible": True},
+                                 vertical=True), ],
+                 width=1),
+         dbc.Col(fn.load_with_spinner(
+             dcc.Graph(id="barchart-detail")), width=11)
+         ],
+        className="mt-5")
 ],
     className="p-3 bg-light rounded-3")
 
-layout = [html.H3("Analyse de la qualité des signatures au niveau des publications", className="text-center"),
+layout = [html.H2("Analyse de la qualité des signatures au niveau des publications", className="text-center mt-5 mb-5"),
           collapse_regroup_data,
           row_widgets_regroup,
           html.Hr(),
-          html.H3("Analyse de la qualité des signatures au niveau des mentions d'affiliation",
-                  className="text-center"),
+          html.H2("Analyse de la qualité des signatures au niveau des mentions d'affiliation",
+                  className="text-center mt-5 mb-5"),
           collapse_detail_data,
           row_widgets_detail, ]
 
@@ -182,7 +198,8 @@ def update_pie_regroup(slider_pie_regroup):
     fig = px.pie(filtered_data, names='synthese_mention_adresse_norm', color='synthese_mention_adresse_norm',
                  color_discrete_map=colors, hole=0.7, title="Ventilation globale des mentions d'affiliation (consolidées au niveau publication)")
     fig.for_each_trace(lambda t: t.update(
-             labels=[label.replace("_", " ").upper() for label in t.labels])
+        #labels=[label.replace("_", " ").upper() for label in t.labels]
+        labels=[mapping_variable[label] for label in t.labels])
     )
     return fig
 
@@ -223,11 +240,10 @@ def update_regroup_section(radio_regroup_datatype):
         orientation="h",
         y=-0.3,
     ))
-    fig.for_each_trace(lambda t: t.update(name=t.name.replace("_", " ").upper(),
-                                          legendgroup=t.name.replace(
-                                              "_", " ").upper(),
+    fig.for_each_trace(lambda t: t.update(name=mapping_variable[t.name],
+                                          legendgroup=mapping_variable[t.name],
                                           hovertemplate=t.hovertemplate.replace(
-                                              t.name, t.name.replace("_", " ").upper())
+                                              t.name, mapping_variable[t.name])
                                           ))
     return fig, table
 
@@ -236,9 +252,10 @@ def update_regroup_section(radio_regroup_datatype):
     [Output("barchart-detail", "figure"),
      Output("table-detail", "children")],
     [Input("radio-detail-datatype", "value"),
-     Input("slider-barchart-detail", "value")]
+     Input("slider-barchart-detail", "value"),
+     Input("slider-nb-structures", "value")]
 )
-def update_detail_section(radio_detail_datatype, slider_barchart_detail):
+def update_detail_section(radio_detail_datatype, slider_barchart_detail, slider_nb_structures):
     filtered_data = df_bsi_all_by_mention[(df_bsi_all_by_mention["annee_pub"].astype(int) >= int(slider_barchart_detail[0])) & (
         df_bsi_all_by_mention["annee_pub"].astype(int) <= int(slider_barchart_detail[1]))]
     crosstab_simple = fn.get_crosstab_simple(
@@ -250,10 +267,10 @@ def update_detail_section(radio_detail_datatype, slider_barchart_detail):
         data_no_margins['affiliation_name_wrapped'] = data_no_margins['affiliation_name'].apply(
             lambda x: f'{wrap(x, 30)[0]}...')
         if radio_detail_datatype == 'qte':
-            fig = px.bar(data_no_margins, x='affiliation_name_wrapped',
+            fig = px.bar(data_no_margins.loc[slider_nb_structures[0]:slider_nb_structures[1]], x='affiliation_name_wrapped',
                          y=chart_cols, color_discrete_map=colors, height=700)
         if radio_detail_datatype == 'log':
-            fig = px.bar(data_no_margins, x='affiliation_name_wrapped',
+            fig = px.bar(data_no_margins.loc[slider_nb_structures[0]:slider_nb_structures[1]], x='affiliation_name_wrapped',
                          y=chart_cols, color_discrete_map=colors, log_y=True, height=700)
         fig.update_traces(textposition='inside', texttemplate="%{value}")
         fig.update_yaxes(title_text="Nombre de mentions d'adresse")
@@ -267,8 +284,8 @@ def update_detail_section(radio_detail_datatype, slider_barchart_detail):
     if radio_detail_datatype == 'percent':
         data_no_margins = crosstab_percent.iloc[:-1, :]
         data_no_margins['affiliation_name_wrapped'] = data_no_margins['affiliation_name'].apply(
-            lambda x: f'{wrap(x, 30)[0]}...')
-        fig = px.bar(data_no_margins, x='affiliation_name_wrapped',
+            lambda x: f'{wrap(x, 30)[0]}...').loc[slider_nb_structures[0]:slider_nb_structures[1]]
+        fig = px.bar(data_no_margins.loc[slider_nb_structures[0]:slider_nb_structures[1]], x='affiliation_name_wrapped',
                      y=chart_cols, color_discrete_map=colors, height=700)
         fig.update_traces(textposition='inside', texttemplate="%{value}"+"%")
         fig.update_yaxes(title_text="Pourcentage des mentions d'adresse")
@@ -280,10 +297,13 @@ def update_detail_section(radio_detail_datatype, slider_barchart_detail):
             filter_action='native'
         )
     fig.update_xaxes(title_text='Structures de recherche')
-    fig.for_each_trace(lambda t: t.update(name=t.name.replace("_", " ").upper(),
-                                          legendgroup=t.name.replace(
-                                              "_", " ").upper(),
+    fig.update_layout(legend=dict(
+        orientation="h",
+        y=1.1,
+    ))
+    fig.for_each_trace(lambda t: t.update(name=mapping_variable[t.name],
+                                          legendgroup=mapping_variable[t.name],
                                           hovertemplate=t.hovertemplate.replace(
-                                              t.name, t.name.replace("_", " ").upper())
+                                              t.name, mapping_variable[t.name])
                                           ))
     return fig, table

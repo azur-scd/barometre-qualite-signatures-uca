@@ -14,3 +14,7 @@ COLORS = {'universite_non_mentionnee': 'grey',
 COLS = ['universite_non_mentionnee', 'uca_forme_developpee',
               'uca_sigle', 'uns']
 COLS_CHARTE = ['ca3_autres', 'cas2_uca_sigle','cas1_uca_forme_developpee']
+MAPPING_VARIABLE = {'universite_non_mentionnee': "Université Côte d'azur non mentionnée",
+                   'uca_forme_developpee': "Université Côte d'azur forme développée",
+                   'uca_sigle': 'UCA Sigle seul',
+                   'uns': "Université Nice Sophia Antipolis ou UNS"}
