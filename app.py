@@ -72,7 +72,7 @@ navbar = dbc.Navbar(
                     [#dbc.NavItem(dbc.NavLink("Home", href="/")), 
                      dbc.NavItem(dbc.NavLink("Tableau de bord UCA", href=f"{url_subpath}dashboard")), 
                      dbc.NavItem(dbc.NavLink("Tableau de bord par structure", href=f"{url_subpath}dashboard-par-structure")), 
-                     dbc.NavItem(dbc.NavLink("Données", href=f"{url_subpath}/data")), 
+                     dbc.NavItem(dbc.NavLink("Données", href=f"{url_subpath}data")), 
 ],
                     className="ms-auto",
                     navbar=True,

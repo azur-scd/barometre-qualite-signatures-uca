@@ -28,7 +28,7 @@ jumbotron = html.Div(
                - **Cas 4. Université Côte d'Azur n'est pas mentionnée** : Université Côte d'Azur (forme littérale ou sigle) n'est présente dans aucune des mentions d'affiliation de la publication (la publication alors est repérée par la structure de recherche ou l'établissement composante)
 '''),
             html.P(
-                dbc.Button("Accéder au tableau de bord", color="primary",href=f"{url_subpath}/dashboard",), className="lead text-center"
+                dbc.Button("Accéder au tableau de bord", color="primary",href=f"{url_subpath}dashboard",), className="lead text-center"
             ),
         ],
         fluid=True,

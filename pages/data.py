@@ -72,7 +72,7 @@ grid_bsi_publis_uniques = dvx.Grid(
             "caption": "(all) Affiliations" 
             },
              {
-            "dataField": "regroup_ce_indexed-name",
+            "dataField": "regroup_ce_indexed_name",
             "caption": "(all) Auteurs" 
             },
              {
@@ -119,7 +119,7 @@ grid_bsi_all_by_mention = dvx.Grid(
             "visible": False
             },
               {
-            "dataField": "ce_indexed-name",
+            "dataField": "ce_indexed_name",
             "caption": "Auteur",
             },
              {
