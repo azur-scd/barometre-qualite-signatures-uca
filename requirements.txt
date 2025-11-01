@@ -2,7 +2,7 @@ autopep8==1.7.0
 Brotli==1.0.9
 click==8.1.3
 colorama==0.4.5
-dash==2.6.1
+dash==2.15.0
 dash-bootstrap-components==1.2.1
 dash-core-components==2.0.0
 dash-dvx==1.2.0
